@@ -1,0 +1,379 @@
+Ejercicio 1: 
+
+#include <iostream>
+#include <map>
+#include <string>
+using namespace std;
+int main() {
+	int Q;
+	cin >> Q;   
+	map<string, int> studentMarks;
+	while (Q--) {
+    	int type;
+    	cin >> type; 	
+    	if (type == 1) {
+        	string name;
+        	int marks;
+        	cin >> name >> marks;
+        	studentMarks[name] += marks;
+    	} else if (type == 2) {
+        	string name;
+        	cin >> name;
+        	studentMarks.erase(name);
+    	} else if (type == 3) {
+        	string name;
+        	cin >> name;
+        	if (studentMarks.find(name) != studentMarks.end()) {
+            	cout << studentMarks[name] << endl;
+        	} else {
+            	cout << "0" << endl;
+        	}
+    	}
+	} 
+	return 0;
+}
+
+------------------------------------------------------------------
+Ejercicio 2:
+
+class Solution {
+private:
+    // Implementación del algoritmo KMP para buscar si pattern es un subconjunto de text.
+    bool isSubset(const string& text, const string& pattern) {
+        int m = pattern.size();
+        vector<int> lps(m, 0);
+
+
+        // Construir el array lps (Longest Prefix Suffix)
+        int len = 0;
+        for (int i = 1; i < m; ) {
+            if (pattern[i] == pattern[len]) {
+                lps[i++] = ++len;
+            } else {
+                if (len != 0) {
+                    len = lps[len - 1];
+                } else {
+                    lps[i++] = 0;
+                }
+            }
+        }
+
+
+        // Realizar la búsqueda en el texto utilizando el array lps
+        int n = text.size();
+        int i = 0, j = 0;
+        while (i < n) {
+            if (pattern[j] == text[i]) {
+                ++i;
+                ++j;
+            }
+            if (j == m) {
+                return true;  // Se encontró un subconjunto
+            } else if (i < n && pattern[j] != text[i]) {
+                if (j != 0) {
+                    j = lps[j - 1];
+                } else {
+                    ++i;
+                }
+            }
+        }
+        return false;  // No se encontró un subconjunto
+    }
+
+
+public:
+    vector<string> wordSubsets(vector<string>& words1, vector<string>& words2) {
+        unordered_map<char, int> charCount;
+
+
+        // Calcular la frecuencia máxima de cada letra en words2
+        for (const string& word : words2) {
+            unordered_map<char, int> tempCount;
+            for (char ch : word) {
+                tempCount[ch]++;
+            }
+            for (const auto& entry : tempCount) {
+                charCount[entry.first] = max(charCount[entry.first], entry.second);
+            }
+        }
+
+
+        vector<string> result;
+        // Verificar si cada palabra en words1 es un subconjunto de charCount
+        for (const string& word : words1) {
+            unordered_map<char, int> wordCount;
+            for (char ch : word) {
+                wordCount[ch]++;
+            }
+
+
+            bool isUniversal = true;
+            for (const auto& entry : charCount) {
+                if (wordCount[entry.first] < entry.second) {
+                    isUniversal = false;
+                    break;
+                }
+            }
+
+
+            if (isUniversal) {
+                result.push_back(word);
+            }
+        }
+
+
+        return result;
+    }
+};
+
+----------------------------------------------------------------------------------------------
+Ejercicio 3: 
+
+class Solution {
+public:
+    int strStr(string& haystack, string& needle) {
+    string newString = needle + "$" + haystack;
+
+
+    vector<int> Z(newString.size(), 0);
+    int left = 0;
+    int right = 0;
+
+
+    for (int k = 1; k < newString.size(); k++) {
+        if (k <= right) {
+            int k1 = k - left;
+            Z[k] = min(right - k + 1, Z[k1]);
+        }
+
+
+        while (k + Z[k] < newString.size() && newString[Z[k]] == newString[k + Z[k]]) {
+            Z[k]++;
+        }
+
+
+        if (k + Z[k] - 1 > right) {
+            left = k;
+            right = k + Z[k] - 1;
+        }
+
+
+        if (Z[k] == needle.size()) {
+            return (k - needle.size() - 1);
+        }
+    }
+
+
+    return -1;
+    }
+
+
+};
+
+--------------------------------------------------------------------------------------
+struct SegmentTree {
+    vector<int> tree;
+    int N;
+    int length;
+
+
+    SegmentTree(vector<int>& heights) {
+        N = heights.size();
+        length = 4 * N;
+        tree.resize(length, INT_MIN);
+        build(heights, 1, 0, N - 1);
+    }
+
+
+    void build(vector<int>& heights, int x, int left, int right) {
+        if (left == right) {
+            tree[x] = heights[left];
+            return;
+        }
+        int mid = (left + right) / 2;
+        build(heights, 2 * x, left, mid);
+        build(heights, 2 * x + 1, mid + 1, right);
+        tree[x] = tree[2 * x] + tree[2 * x + 1];
+        return;
+    }
+
+
+    void update(int x, int left, int right, int index, int value) {
+        if (left == right) {
+            tree[x] = value;
+            return;
+        }
+        int mid = (left + right) / 2;
+        if (index > mid) {
+            update(2 * x + 1, mid + 1, right, index, value);
+        } else {
+            update(2 * x, left, mid, index, value);
+        }
+        tree[x] = tree[2 * x] + tree[2 * x + 1];
+        return;
+    }
+
+
+    int find(int x, int left, int right, int k) {
+        if (left == right) {
+            return left;
+        }
+
+
+        int mid = (left + right) / 2;
+        if (k <= tree[2 * x]) {
+            return find(2 * x, left, mid, k);
+        } else {
+            return find(2 * x + 1, mid + 1, right, k - tree[2 * x]);
+        }
+    }
+};
+
+
+class Solution {
+public:
+    static bool myCompare(vector<int>& person1, vector<int>& person2) {
+        if (person1[0] < person2[0]) return true;
+        if (person1[0] > person2[0]) return false;
+
+
+        if (person1[1] > person2[1]) return true;
+        return false;
+    }
+
+
+    void printQueue(vector<vector<int>>& queue) {
+        for (int i = 0; i < queue.size(); i++)
+            cout << "(" << queue[i][0] << "," << queue[i][1] << "), ";
+        cout << endl;
+    }
+
+
+    vector<vector<int>> reconstructQueue(vector<vector<int>>& people) {
+        int n = people.size();
+        sort(people.begin(), people.end(), myCompare);
+        vector<vector<int>> result(n, vector<int>{0, 0});
+
+
+        vector<int> heights(n, 1);
+        SegmentTree segTree = SegmentTree(heights);
+        int index;
+
+
+        for (int i = 0; i < n; i++) {
+            index = segTree.find(1, 0, n - 1, people[i][1] + 1);
+            result[index][0] = people[i][0];
+            result[index][1] = people[i][1];
+            // update segTree
+            segTree.update(1, 0, n - 1, index, 0);
+        }
+
+
+        return result;
+    }
+};
+-------------------------------------------------------------------------------------------------
+Ejercicio 5: 
+class Solution {
+private:
+    int getSum(vector<int> &BIT, int x) {
+        int sum = 0;
+        for (; x > 0; x -= (x & -x))
+            sum += BIT[x];
+        return sum;
+    }
+
+
+    void update(vector<int> &BIT, int x, const int val) {
+        for (; x < BIT.size(); x += (x & -x))
+            BIT[x] += val;
+    }
+
+
+public:
+    vector<int> processQueries(vector<int>& queries, int m) {
+        if (m == 1)
+            return {0};
+        int n = queries.size();
+        vector<int> result, binaryIndexedTree(m + n + 1, 0), hash(m + 1);
+
+
+        for (int i = 1; i <= m; ++i) {
+            hash[i] = n + i;
+            update(binaryIndexedTree, n + i, 1); // construir el árbol de indexado binario
+        }
+
+
+        for (auto q : queries) {
+            result.push_back(getSum(binaryIndexedTree, hash[q] - 1));
+            update(binaryIndexedTree, hash[q], -1); // disminuir 1 elemento en índice = hash[q] y después
+            update(binaryIndexedTree, n, 1); // aumentar 1 elemento en índice = n y después
+            hash[q] = n--; // actualizar hash[q]
+        }
+
+
+        return result;
+    }
+};
+---------------------------------------------------------------------------------------
+Ejercicio 6:
+
+
+class Solution {
+public:
+    int maxProfit(vector<int>& prices, int fee) {
+     int n = prices.size();
+    int comprar = -prices[0] - fee;
+    int base = 0;              
+    for (int i = 1; i < n; ++i) {
+        int comprar_aux = comprar;
+        comprar = max(comprar, base - prices[i] - fee);
+        base = max(base, comprar_aux + prices[i]);
+    }
+    return base;
+    }
+};
+
+-----------------------------------------------------------------------------------------------------------------
+Ejercicio 7:
+
+class Solution {
+public:
+    int networkDelayTime(vector<vector<int>>& times, int n, int k) {
+    vector<int> distancia(n + 1, INT_MAX);
+    distancia[k] = 0;
+
+
+    for (int i = 0; i < n ; ++i) {
+        for (vector<int> nodo : times) {
+            int origen = nodo[0];
+            int fin = nodo[1];
+            int peso = nodo[2];
+            if (distancia[origen] != INT_MAX && distancia[origen] + peso < distancia[fin]) {
+                distancia[fin] = distancia[origen] + peso;
+            }
+        }
+    }
+
+
+    //Verificación ciclo negativo (En caso se inserte nodos negativos)
+    //for (vector<int> nodo : times) {
+    //    int origen = nodo[0];
+    //    int fin = nodo[1];
+    //    int peso = nodo[2];
+    //    if (distancia[origen] != INT_MAX && distancia[origen] + peso < distancia[fin]) {
+    //        return -1;
+    //    }
+    //}
+
+
+    int maxTime = 0;
+    for (int i = 1; i <= n; ++i) {
+       
+        maxTime = max(maxTime, distancia[i]);
+       
+    }
+    return maxTime == INT_MAX ? -1 : maxTime;
+}
+};
+
